@@ -1,4 +1,4 @@
-# 🪵 Hadoop Log Analysis — Docker Setup
+# Hadoop Log Analysis — Docker Setup
 
 Run the full **Hadoop Web Server Log Analysis** in Docker with zero local setup.
 
@@ -74,27 +74,6 @@ docker compose up log-analysis-hadoop
 | `MODE`      | `local`  | `local` = Unix pipes · `hadoop` = Hadoop Streaming       |
 | `SKIP_JOBS` | `false`  | `true` = skip job execution, serve existing results      |
 
-```bash
-# Skip re-running jobs (use pre-built TSV results):
-docker compose run -e SKIP_JOBS=true log-analysis-local
-```
-
----
-
-## Build Without Compose
-
-```bash
-docker build -t hadoop-log-analysis .
-
-# Local mode
-docker run -p 8501:8501 -e MODE=local hadoop-log-analysis
-
-# Hadoop mode (needs 4 GB)
-docker run -p 8501:8501 -p 9870:9870 -p 8088:8088 \
-    -e MODE=hadoop --memory=4g hadoop-log-analysis
-```
-
----
 
 ## The 13 Analysis Jobs
 
@@ -139,8 +118,8 @@ docker compose down -v
 
 | Component         | Version      |
 |-------------------|--------------|
-| Python            | 3.11-slim    |
-| Java              | OpenJDK 17   |
+| Python            | 3.11-bullseye|
+| Java              | OpenJDK 11   |
 | Hadoop            | 3.3.6        |
 | Streamlit         | >= 1.32      |
 | Plotly            | >= 5.18      |
