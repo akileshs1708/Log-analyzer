@@ -1,0 +1,6 @@
+**/__pycache__
+**/*.pyc
+**/*.pyo
+.git
+.gitignore
+hadoop_log_analysis/results/*.tsv

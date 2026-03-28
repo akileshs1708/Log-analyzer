@@ -1,0 +1,82 @@
+version: "3.9"
+
+# =============================================================================
+# Hadoop Web Server Log Analysis – Docker Compose
+#
+# Services:
+#   log-analysis-local  – Fast local MapReduce (no Hadoop), Streamlit dashboard
+#   log-analysis-hadoop – Full Hadoop pseudo-distributed mode + Streamlit
+#
+# Usage:
+#   # Quick start (local mode, ~30 seconds to first dashboard):
+#   docker compose up log-analysis-local
+#
+#   # Full Hadoop mode (HDFS + YARN + MapReduce Streaming):
+#   docker compose up log-analysis-hadoop
+#
+#   # Open browser: http://localhost:8501
+# =============================================================================
+
+services:
+
+  # ── LOCAL mode ──────────────────────────────────────────────────────────────
+  # Runs all 13 MapReduce jobs using Unix pipes (no Hadoop cluster needed).
+  # Fast startup, ideal for development and result exploration.
+  log-analysis-local:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hadoop-log-analysis-local
+    environment:
+      MODE: local
+      SKIP_JOBS: "false"   # set "true" to skip job execution (use pre-built results)
+    ports:
+      - "8501:8501"        # Streamlit dashboard
+    volumes:
+      - log-results-local:/app/results   # persist TSV results across restarts
+      - log-data:/app/data               # persist generated access.log
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  # ── HADOOP mode ─────────────────────────────────────────────────────────────
+  # Starts a full Hadoop pseudo-distributed cluster (HDFS + YARN),
+  # runs all 13 jobs via Hadoop Streaming, then launches the dashboard.
+  log-analysis-hadoop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hadoop-log-analysis-hadoop
+    environment:
+      MODE: hadoop
+      SKIP_JOBS: "false"
+    ports:
+      - "8501:8501"   # Streamlit dashboard
+      - "9870:9870"   # HDFS NameNode Web UI
+      - "8088:8088"   # YARN ResourceManager Web UI
+    volumes:
+      - log-results-hadoop:/app/results
+      - log-data:/app/data
+      - hadoop-tmp:/tmp/hadoop-data      # HDFS storage
+    # Hadoop requires more resources than local mode
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
+
+volumes:
+  log-results-local:
+  log-results-hadoop:
+  log-data:
+  hadoop-tmp:
